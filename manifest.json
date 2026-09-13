@@ -4,16 +4,16 @@
         "name": "Show Director",
         "description": "Adds a director line to library cards in Jellyfin Web (Title / Director / Year), reading directly from each item's own Jellyfin metadata - no external lookups. Configurable from the admin dashboard: separator for multiple directors, how many to show before truncating, and which item types (movies, series, episodes) it applies to.\n",
         "overview": "Shows the director's name on movie and series cards in Jellyfin Web.",
-        "owner": "YOUR_GITHUB_USERNAME",
+        "owner": "uglygus",
         "category": "General",
         "versions": [
             {
                 "version": "0.1.0.0",
                 "changelog": "- Center the inserted director name line on cards. - Packaged for install via a Jellyfin plugin repository - no more manual\n  DLL copying required.\n",
-                "targetAbi": "10.11.0.0",
+                "targetAbi": "12.0.0.0",
                 "sourceUrl": "https://github.com/uglygus/jellyfin-plugin-show-director/releases/download/v0.1.0/show-director/show-director_0.1.0.0.zip",
-                "checksum": "2c60088ba211574338912640ec47f9fd",
-                "timestamp": "2026-09-13T22:04:33Z"
+                "checksum": "b0ef0b293e59000020d5eae329914f0d",
+                "timestamp": "2026-09-13T22:32:09Z"
             }
         ]
     }
