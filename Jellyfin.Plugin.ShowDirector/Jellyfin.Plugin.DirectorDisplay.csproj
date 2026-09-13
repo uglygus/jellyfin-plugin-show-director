@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Jellyfin 10.11.x runs on .NET 9 (10.10.x also used net8.0; 10.11 moved to net9.0) -->
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Jellyfin.Plugin.ShowDirector</AssemblyName>
+    <RootNamespace>Jellyfin.Plugin.ShowDirector</RootNamespace>
+    <!-- Bump this to match whatever Jellyfin server version you're running -->
+    <Version>1.0.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Pinned to match server version 10.11.6 exactly. If you upgrade your
+      Jellyfin server later, bump both of these to match
+      (check Dashboard -> General -> version in your Jellyfin admin UI).
+    -->
+    <PackageReference Include="Jellyfin.Controller" Version="10.11.6" />
+    <PackageReference Include="Jellyfin.Model" Version="10.11.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Embed the config page and the JS payload directly into the plugin DLL -->
+    <EmbeddedResource Include="Configuration\configPage.html" />
+    <EmbeddedResource Include="Web\show-director.js" />
+  </ItemGroup>
+
+</Project>

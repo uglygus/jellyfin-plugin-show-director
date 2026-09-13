@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Show Director</title>
+</head>
+<body>
+    <div id="ShowDirectorConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox,emby-select">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="ShowDirectorConfigForm">
+                    <div class="verticalSection">
+                        <h2>Show Director</h2>
+                        <p>Adds the director's name to library cards (between the title and the year) in Jellyfin Web.</p>
+                    </div>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="Enabled" />
+                            <span>Enabled</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
+                            Turns the director line on/off. Requires a server restart to take effect (index.html is only patched at startup).
+                        </div>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="checkboxContainer checkboxContainer-withDescription">
+                            <input is="emby-checkbox" type="checkbox" id="ApplyToMovies" />
+                            <span>Apply to movies</span>
+                        </label>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="checkboxContainer checkboxContainer-withDescription">
+                            <input is="emby-checkbox" type="checkbox" id="ApplyToSeries" />
+                            <span>Apply to TV series</span>
+                        </label>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="checkboxContainer checkboxContainer-withDescription">
+                            <input is="emby-checkbox" type="checkbox" id="ApplyToEpisodes" />
+                            <span>Apply to individual episodes</span>
+                        </label>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="MultiDirectorSeparator">Separator for multiple directors</label>
+                        <select is="emby-select" id="MultiDirectorSeparator" class="emby-select-withcolor emby-select">
+                            <option value=", ">Comma (Jane Smith, John Jones)</option>
+                            <option value=" / ">Slash (Jane Smith / John Jones)</option>
+                            <option value=" &amp; ">Ampersand (Jane Smith &amp; John Jones)</option>
+                        </select>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="MaxDirectors">Max directors shown</label>
+                        <input is="emby-input" type="number" id="MaxDirectors" min="1" max="6" />
+                        <div class="fieldDescription">
+                            If a title has more directors than this, it's truncated with "et al."
+                        </div>
+                    </div>
+
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        (function () {
+            var pluginId = "d1a9e9d2-6b2e-4d9a-8c39-2f6a1a9c4b2e";
+
+            function loadConfig(page) {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                    page.querySelector('#Enabled').checked = config.Enabled;
+                    page.querySelector('#ApplyToMovies').checked = config.ApplyToMovies;
+                    page.querySelector('#ApplyToSeries').checked = config.ApplyToSeries;
+                    page.querySelector('#ApplyToEpisodes').checked = config.ApplyToEpisodes;
+                    page.querySelector('#MultiDirectorSeparator').value = config.MultiDirectorSeparator;
+                    page.querySelector('#MaxDirectors').value = config.MaxDirectors;
+                    Dashboard.hideLoadingMsg();
+                });
+            }
+
+            function saveConfig(page) {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                    config.Enabled = page.querySelector('#Enabled').checked;
+                    config.ApplyToMovies = page.querySelector('#ApplyToMovies').checked;
+                    config.ApplyToSeries = page.querySelector('#ApplyToSeries').checked;
+                    config.ApplyToEpisodes = page.querySelector('#ApplyToEpisodes').checked;
+                    config.MultiDirectorSeparator = page.querySelector('#MultiDirectorSeparator').value;
+                    config.MaxDirectors = parseInt(page.querySelector('#MaxDirectors').value, 10) || 2;
+
+                    ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                    });
+                });
+            }
+
+            document.getElementById('ShowDirectorConfigPage')
+                .addEventListener('pageshow', function () {
+                    loadConfig(this);
+                });
+
+            document.getElementById('ShowDirectorConfigForm')
+                .addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    saveConfig(document.getElementById('ShowDirectorConfigPage'));
+                    return false;
+                });
+        })();
+    </script>
+</body>
+</html>

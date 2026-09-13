@@ -1,0 +1,29 @@
+---
+# Read by jprm (Jellyfin Plugin Repository Manager) to package this plugin
+# and generate its entry in the repository's manifest.json.
+#
+# "version" here is just a fallback/default - the release workflow
+# (.github/workflows/release.yml) overrides it with the pushed git tag,
+# so you don't need to edit this file for every release. Do bump
+# targetAbi/framework if you move to a newer Jellyfin server version.
+
+name: "Show Director"
+guid: "d1a9e9d2-6b2e-4d9a-8c39-2f6a1a9c4b2e"
+version: "1.1.0.0"
+targetAbi: "10.11.0.0"
+framework: "net9.0"
+owner: "YOUR_GITHUB_USERNAME"
+overview: "Shows the director's name on movie and series cards in Jellyfin Web."
+description: >
+  Adds a director line to library cards in Jellyfin Web (Title / Director /
+  Year), reading directly from each item's own Jellyfin metadata - no
+  external lookups. Configurable from the admin dashboard: separator for
+  multiple directors, how many to show before truncating, and which item
+  types (movies, series, episodes) it applies to.
+category: "General"
+artifacts:
+  - "Jellyfin.Plugin.ShowDirector.dll"
+changelog: >
+  - Center the inserted director name line on cards.
+  - Packaged for install via a Jellyfin plugin repository - no more manual
+    DLL copying required.
