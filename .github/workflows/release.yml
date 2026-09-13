@@ -58,7 +58,7 @@ jobs:
         id: build
         run: |
           mkdir -p artifacts
-          ZIPFILE=$(jprm --verbosity=debug plugin build "Jellyfin.Plugin.DirectorDisplay" --output=artifacts --version="${{ steps.version.outputs.version }}")
+          ZIPFILE=$(jprm --verbosity=debug plugin build "Jellyfin.Plugin.ShowDirector" --output=artifacts --version="${{ steps.version.outputs.version }}")
           echo "Built $ZIPFILE"
           echo "zipfile=$ZIPFILE" >> "$GITHUB_OUTPUT"
 
