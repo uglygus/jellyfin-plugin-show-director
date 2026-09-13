@@ -68,10 +68,23 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           files: ${{ steps.build.outputs.zipfile }}
 
+      # - name: Update JPRM repository manifest
+      #   run: |
+      #     RELEASE_URL="https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}"
+      #     jprm --verbosity=debug repo add --url="$RELEASE_URL" . "${{ steps.build.outputs.zipfile }}"
+
+
       - name: Update JPRM repository manifest
         run: |
-          RELEASE_URL="https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}"
-          jprm --verbosity=debug repo add --url="$RELEASE_URL" . "${{ steps.build.outputs.zipfile }}"
+          ZIP_NAME="$(basename "${{ steps.build.outputs.zipfile }}")"
+          PLUGIN_URL="https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/${ZIP_NAME}"
+
+          echo "Plugin URL: $PLUGIN_URL"
+
+          jprm --verbosity=debug repo add \
+            --plugin-url="$PLUGIN_URL" \
+            . \
+            "${{ steps.build.outputs.zipfile }}"
 
 
       - name: Commit updated manifest.json
