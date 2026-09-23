@@ -8,100 +8,78 @@ Jane Smith
 2024
 ```
 
-The director name is centered under the title. It reads the director
-straight from Jellyfin's own metadata (the `People` list on each item,
-filtered to `Type === "Director"`) — no extra scraping or external API
-calls.
+Reads the director straight from Jellyfin's own metadata (the `People`
+list on each item, filtered to `Type === "Director"`) — no scraping, no
+external API calls. Only affects Jellyfin Web and clients built on it
+(desktop browsers, desktop app, PWA) — native Android TV, Roku, tvOS,
+Kodi, etc. are unaffected.
 
-## How it works
+## Install
 
-- **C# server plugin** (`Jellyfin.Plugin.ShowDirector`) does two things:
-  1. Serves a config page in the admin dashboard (enable/disable, separator,
-     max directors shown, which item types to apply to).
-  2. On every server startup, patches `jellyfin-web/index.html` to add one
-     `<script>` tag pointing at an embedded JS file the plugin also serves.
-     It re-applies this patch on every start, so a Jellyfin **server**
-     update (which replaces `index.html`) doesn't silently undo it — you
-     just need to restart Jellyfin once after each update for it to be
-     re-applied.
-- **Client JS** (`Web/show-director.js`) runs in the browser. It uses a
-  `MutationObserver` to notice cards as Jellyfin renders/recycles them
-  (virtual scrolling), pulls the item's `People` data via `ApiClient`
-  (already authenticated in the browser session — no API key needed), and
-  inserts a centered line between the title and the year.
-
-This only affects **Jellyfin Web** and clients built on it (desktop
-browsers, the desktop app, PWA). It will not affect native Android TV,
-Roku, tvOS, Kodi, etc. — those apps don't use this HTML/JS at all.
-
-## Install (recommended: plugin repository)
-
-This repo is set up so Jellyfin can install and update the plugin through
-its normal **Plugins → Catalog** UI, instead of you copying the DLL by
-hand each time.
-
-1. In Jellyfin, go to **Dashboard → Plugins → Repositories → +**.
-2. Add this repository's manifest URL:
+1. **Dashboard → Plugins → Repositories → +**, add:
    ```
    https://raw.githubusercontent.com/uglygus/jellyfin-plugin-show-director/main/manifest.json
    ```
-   (Replace `YOUR_GITHUB_USERNAME`/`YOUR_REPO_NAME` with wherever you've
-   pushed this repo — see [Releasing](#releasing-a-new-version-maintainers)
-   below if you haven't cut a release yet, since the manifest starts
-   empty and only has entries after the first tagged release.)
-3. Save, then go to the **Catalog** tab — "Show Director" should now
-   appear there. Install it like any other plugin.
-4. **Restart Jellyfin.** This is required — the `index.html` patch only
-   runs at server startup.
-5. Go to **Plugins → Show Director** to confirm it loaded and to adjust
-   settings (separator, max directors, which item types get the line). Any
-   change here also requires a restart, since it's baked into the injected
-   `<script>` tag.
-6. Reload Jellyfin Web in your browser (hard refresh, `Ctrl+Shift+R` /
-   `Cmd+Shift+R`, to bypass the cached `index.html`).
+2. Go to **Catalog**, find "Show Director", install it.
+3. **Restart Jellyfin** (required — it patches `index.html` on startup).
+4. **Plugins → Show Director** to set separator, max directors shown, and
+   which item types get the line. Any change here needs another restart.
+5. Hard-refresh Jellyfin Web (`Ctrl+Shift+R` / `Cmd+Shift+R`) to bypass
+   the cached `index.html`.
 
-Future updates then show up as a normal update badge in **Plugins →
-My Plugins**, same as any catalog plugin.
+Future updates then show up in **Plugins → My Plugins** like any other
+catalog plugin.
 
-## Releasing a new version (maintainers)
 
-This repo builds and publishes itself via GitHub Actions — you don't need
-the .NET SDK locally unless you're actively developing.
 
-1. Fork/push this repo to your own GitHub account.
-2. Edit `Jellyfin.Plugin.ShowDirector/build.yaml` once and set `owner:`
-   to your name (cosmetic — shows in the plugin catalog listing).
-3. Commit your changes to `main`.
-4. Tag a release and push the tag:
-   ```bash
-   git tag v1.1.0
-   git push origin v1.1.0
-   ```
-   (Use a plain `major.minor.patch` — the workflow expands it to the
-   4-part assembly version Jellyfin expects.)
-5. The `.github/workflows/release.yml` workflow will:
-   - Build the plugin DLL and package it into a versioned zip with
-     [jprm](https://github.com/oddstr13/jellyfin-plugin-repository-manager).
-   - Attach that zip to a new GitHub Release matching the tag.
-   - Append/update that version's entry in `manifest.json`, pointing at
-     the release asset, and commit the updated `manifest.json` back to
-     `main`.
-6. Once that workflow finishes, the manifest URL above will list the new
-   version and Jellyfin will offer it as an update.
 
-Note: the workflow checks out and pushes to `main` directly, so tag
-whatever commit is currently the tip of `main`.
+![BEFORE](./bluecollar-orig.png)
 
-## Manual install (no repository, copy the DLL yourself)
+![WITH PLUGIN](./bluecollar-with-director.png)
 
-If you'd rather not set up the GitHub repository/catalog flow, you can
-still build and copy the DLL directly, same as before:
 
-You'll need the [.NET 9 SDK](https://dotnet.microsoft.com/download) on
-your machine (this doesn't need to be the Jellyfin server itself — build
-anywhere with internet access, then copy the DLL over). Jellyfin 10.11.x
-runs on .NET 9 — don't install .NET 10, it's only used by the still-in-beta
-Jellyfin 12.0 line.
+### Manual install (no repository)
+
+Build the DLL (see [Building](#building) below) and copy it to your
+plugin directory, then restart:
+
+```bash
+mkdir -p /config/plugins/ShowDirector
+cp bin/Release/net10.0/Jellyfin.Plugin.ShowDirector.dll /config/plugins/ShowDirector/
+```
+
+Docker installs: `/config/plugins/ShowDirector/`. Bare-metal:
+`/var/lib/jellyfin/plugins/ShowDirector/`.
+
+## Troubleshooting
+
+- **Nothing shows up**: dev tools → Console →
+  `localStorage.setItem('ShowDirectorDebug', '1')`, reload. Look for
+  `[ShowDirector] initialized ...`. If nothing logs, view page source and
+  search for `ShowDirector` to confirm the script tag was injected.
+- **A title has no director**: it has no `Director` entry in its
+  `People` metadata — check the item's details page in Jellyfin itself,
+  and refresh metadata if needed.
+- **Director line disappeared after a Jellyfin server update**: expected,
+  the update replaced `index.html`. Restart Jellyfin once to re-patch it.
+- **Restoring original index.html**: a one-time backup is saved next to
+  it as `index.html.ShowDirector.bak`.
+
+## Uninstall
+
+Delete the plugin, or toggle **Enabled** off and restart once (cleanly
+removes the injected script tag). If you deleted the DLL without
+disabling first, restore `index.html` from the `.bak` file above.
+
+---
+
+## Development
+
+### Building
+
+Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download) —
+Jellyfin 12.1.x runs on .NET 10. Build anywhere with internet access,
+then copy the DLL to the server.
 
 ```bash
 cd Jellyfin.Plugin.ShowDirector
@@ -109,59 +87,44 @@ dotnet restore
 dotnet build -c Release
 ```
 
-This produces:
+Produces `bin/Release/net10.0/Jellyfin.Plugin.ShowDirector.dll`.
 
-```
-bin/Release/net9.0/Jellyfin.Plugin.ShowDirector.dll
-```
+Pinned to `Jellyfin.Controller`/`Jellyfin.Model` `12.0.0`. If you target
+a different server version, update `targetAbi` in `build.yaml` and the
+`<PackageReference>` versions in the `.csproj` to match, then
+`dotnet restore` again.
 
-This project is pinned to `Jellyfin.Controller`/`Jellyfin.Model` version
-`10.11.6`, matching your server. If you upgrade Jellyfin later, check the
-new version in **Dashboard → General**, then update the
-`<PackageReference>` versions in `Jellyfin.Plugin.ShowDirector.csproj`
-to match and run `dotnet restore` again.
+### How it works
 
-Then:
+- **C# server plugin**: serves the admin config page, and on every
+  server startup patches `jellyfin-web/index.html` to add a `<script>`
+  tag pointing at an embedded JS file it also serves. Re-patches on every
+  start, so a Jellyfin update (which replaces `index.html`) just needs
+  one restart to re-apply.
+- **Client JS** (`Web/show-director.js`): uses a `MutationObserver` to
+  catch cards as Jellyfin renders/recycles them, pulls `People` via the
+  already-authenticated `ApiClient`, and inserts a centered line between
+  title and year.
 
-1. On your Jellyfin server, find (or create) the plugin directory, e.g. for
-   Docker installs this is usually a mounted volume like:
-   ```
-   /config/plugins/ShowDirector/
-   ```
-   For a bare-metal install it's typically:
-   ```
-   /var/lib/jellyfin/plugins/ShowDirector/
-   ```
-2. Copy the built DLL there:
+### Releasing a new version (maintainers)
+
+Builds and publishes itself via GitHub Actions — no local SDK needed
+unless developing.
+
+1. Edit `owner:` in `build.yaml` if you've forked this (cosmetic only).
+2. Commit to `main`.
+3. Tag and push (`major.minor.patch` — the workflow expands it to
+   Jellyfin's 4-part assembly version):
    ```bash
-   mkdir -p /config/plugins/ShowDirector
-   cp bin/Release/net9.0/Jellyfin.Plugin.ShowDirector.dll /config/plugins/ShowDirector/
+   git tag v1.1.0
+   git push origin v1.1.0
    ```
-3. Restart Jellyfin, then follow steps 4–6 from the repository install
-   section above (config page, restart-on-change, hard refresh).
+4. `.github/workflows/release.yml` builds the DLL, packages it with
+   [jprm](https://github.com/oddstr13/jellyfin-plugin-repository-manager),
+   attaches it to a new GitHub Release, and commits the updated
+   `manifest.json` back to `main`.
+5. Jellyfin will then offer the new version as an update via the manifest
+   URL above.
 
-## Troubleshooting
-
-- **Nothing shows up**: Open browser dev tools → Console, and run
-  `localStorage.setItem('ShowDirectorDebug', '1')`, then reload. The
-  script logs `[ShowDirector] initialized ...` on load and logs failed
-  lookups. If you see nothing at all, the script tag likely wasn't
-  injected — view page source and search for `ShowDirector` to confirm.
-- **A title has no director listed**: it likely has no `Director` entry in
-  its `People` metadata in Jellyfin. Check under the item's details page —
-  if Jellyfin itself doesn't show a director, there's nothing for the
-  plugin to read. You may need to refresh metadata for that item.
-- **After a Jellyfin server update, the director line disappeared**: this
-  is expected — the update replaced `index.html`. Just restart Jellyfin
-  once and the plugin will re-patch it on startup.
-- **Restoring the original index.html**: the plugin saves a one-time
-  backup the first time it patches, next to the original file, named
-  `index.html.ShowDirector.bak`.
-
-## Uninstall
-
-1. In the admin dashboard, either delete the plugin (Dashboard → Plugins)
-   or just toggle **Enabled** off and restart once (this cleanly removes
-   the injected script tag from `index.html`).
-2. If you deleted the DLL directly without unchecking Enabled first, you
-   can manually restore `index.html` from the `.bak` file described above.
+Note: the workflow pushes to `main` directly, so tag whatever commit is
+currently the tip of `main`.
